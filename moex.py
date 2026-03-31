@@ -24,8 +24,11 @@ class SharesAndFutures():
         self.shares = self.getShares()
         self.futures = self.getFutures()
 
-        self.sorted_shares, self.sorted_futures = self.sortByGeneralNames(generalSharesNames=self.generalSharesNames,
-                                                                          shares=self.shares, futures=self.futures)
+        self.sorted_shares, self.sorted_futures = self.sortByGeneralNames(
+            generalSharesNames=self.generalSharesNames,
+            shares=self.shares,
+            futures=self.futures
+            )
 
     def getShares(self) -> List[Share]:
 
@@ -76,10 +79,14 @@ class SharesAndFutures():
                         Futures(
                             seсid=futuresSecuritiesData[0],
                             shortName=futuresSecuritiesData[2],
-                            fullName=futuresSecuritiesData[4],
+                            fullName=futuresSecuritiesData[3],
                             lastTradeDate=futuresSecuritiesData[7],
                             lastDelDate=futuresSecuritiesData[8],
                             assetcode=futuresSecuritiesData[11],
+                            initialMargin=futuresSecuritiesData[14],
+                            lotVolume=futuresSecuritiesData[13],
+                            stepPrice=futuresSecuritiesData[17],
+                            sectype=futuresSecuritiesData[9],
 
                             priceOpen=futuresMarketData[5],
                             priceHigh=futuresMarketData[6],
@@ -95,10 +102,14 @@ class SharesAndFutures():
                             Futures(
                                 seсid=futuresSecuritiesData[0],
                                 shortName=futuresSecuritiesData[2],
-                                fullName=futuresSecuritiesData[4],
+                                fullName=futuresSecuritiesData[3],
                                 lastTradeDate=futuresSecuritiesData[7],
                                 lastDelDate=futuresSecuritiesData[8],
                                 assetcode=futuresSecuritiesData[11],
+                                initialMargin=futuresSecuritiesData[14],
+                                lotVolume=futuresSecuritiesData[13],
+                                stepPrice=futuresSecuritiesData[17],
+                                sectype=futuresSecuritiesData[9],
 
                                 priceOpen=futuresMarketData[5],
                                 priceHigh=futuresMarketData[6],
@@ -116,10 +127,14 @@ class SharesAndFutures():
                         Futures(
                             seсid=futuresSecuritiesData[0],
                             shortName=futuresSecuritiesData[2],
-                            fullName=futuresSecuritiesData[4],
+                            fullName=futuresSecuritiesData[3],
                             lastTradeDate=futuresSecuritiesData[7],
                             lastDelDate=futuresSecuritiesData[8],
                             assetcode=futuresSecuritiesData[11],
+                            initialMargin=futuresSecuritiesData[14],
+                            lotVolume=futuresSecuritiesData[13],
+                            stepPrice=futuresSecuritiesData[17],
+                            sectype=futuresSecuritiesData[9],
 
                             priceOpen=futuresMarketData[5],
                             priceHigh=futuresMarketData[6],
@@ -180,6 +195,10 @@ class Futures(TypedDict):
     lastTradeDate: str  # Последний день торгов
     lastDelDate: str  # Последний день исполнения (дата экспирации)
     assetcode: str  # код Акции на которую фьюч
+    initialMargin: float #гарантийное обеспечение
+    lotVolume: float #кол-во базового актива в контракте
+    stepPrice: float #стоймость пункта цены
+    sectype: str #тип контракта
 
     priceOpen: float  # Цена Откр
     priceLow: float  # Цена наименьш
