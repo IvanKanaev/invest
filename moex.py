@@ -1,5 +1,6 @@
 import requests
 from typing import Dict, List, Optional, TypedDict
+from datetime import datetime
 import json
 
 
@@ -24,8 +25,11 @@ class SharesAndFutures():
         self.shares = self.getShares()
         self.futures = self.getFutures()
 
-        self.sorted_shares, self.sorted_futures = self.sortByGeneralNames(generalSharesNames=self.generalSharesNames,
-                                                                          shares=self.shares, futures=self.futures)
+        self.sorted_shares, self.sorted_futures = self.sortByGeneralNames(
+            generalSharesNames=self.generalSharesNames,
+            shares=self.shares,
+            futures=self.futures
+            )
 
     def getShares(self) -> List[Share]:
 
@@ -76,10 +80,14 @@ class SharesAndFutures():
                         Futures(
                             seсid=futuresSecuritiesData[0],
                             shortName=futuresSecuritiesData[2],
-                            fullName=futuresSecuritiesData[4],
+                            fullName=futuresSecuritiesData[3],
                             lastTradeDate=futuresSecuritiesData[7],
                             lastDelDate=futuresSecuritiesData[8],
                             assetcode=futuresSecuritiesData[11],
+                            initialMargin=futuresSecuritiesData[14],
+                            lotVolume=futuresSecuritiesData[13],
+                            stepPrice=futuresSecuritiesData[17],
+                            sectype=futuresSecuritiesData[9],
 
                             priceOpen=futuresMarketData[5],
                             priceHigh=futuresMarketData[6],
@@ -95,10 +103,14 @@ class SharesAndFutures():
                             Futures(
                                 seсid=futuresSecuritiesData[0],
                                 shortName=futuresSecuritiesData[2],
-                                fullName=futuresSecuritiesData[4],
+                                fullName=futuresSecuritiesData[3],
                                 lastTradeDate=futuresSecuritiesData[7],
                                 lastDelDate=futuresSecuritiesData[8],
                                 assetcode=futuresSecuritiesData[11],
+                                initialMargin=futuresSecuritiesData[14],
+                                lotVolume=futuresSecuritiesData[13],
+                                stepPrice=futuresSecuritiesData[17],
+                                sectype=futuresSecuritiesData[9],
 
                                 priceOpen=futuresMarketData[5],
                                 priceHigh=futuresMarketData[6],
@@ -116,10 +128,14 @@ class SharesAndFutures():
                         Futures(
                             seсid=futuresSecuritiesData[0],
                             shortName=futuresSecuritiesData[2],
-                            fullName=futuresSecuritiesData[4],
+                            fullName=futuresSecuritiesData[3],
                             lastTradeDate=futuresSecuritiesData[7],
                             lastDelDate=futuresSecuritiesData[8],
                             assetcode=futuresSecuritiesData[11],
+                            initialMargin=futuresSecuritiesData[14],
+                            lotVolume=futuresSecuritiesData[13],
+                            stepPrice=futuresSecuritiesData[17],
+                            sectype=futuresSecuritiesData[9],
 
                             priceOpen=futuresMarketData[5],
                             priceHigh=futuresMarketData[6],
@@ -180,6 +196,10 @@ class Futures(TypedDict):
     lastTradeDate: str  # Последний день торгов
     lastDelDate: str  # Последний день исполнения (дата экспирации)
     assetcode: str  # код Акции на которую фьюч
+    initialMargin: float #гарантийное обеспечение
+    lotVolume: float #кол-во базового актива в контракте
+    stepPrice: float #стоймость пункта цены
+    sectype: str #тип контракта
 
     priceOpen: float  # Цена Откр
     priceLow: float  # Цена наименьш
@@ -200,4 +220,27 @@ sorted_futures:[[Фьючерс11, Фьючерс12, Фьючерс13...], [Фь
 Ещё есть метод .printSharesAndFuturesSet() он выводит пару [Акция - [фьюч1, фьюч2, фьюч3 и т.д если есть больше] + Enter] итеративно.
 
 """
-sharesAndFuturesBlock.printSharesAndFuturesSet()
+contangos = []
+for share, futures in zip(sharesAndFuturesBlock.sorted_shares, sharesAndFuturesBlock.sorted_futures):
+    share_name = share.get("secid")
+    for future in futures:
+        lotVolume = future.get("lotVolume")
+        share_price = share.get("priceLast") * lotVolume
+        future_price = future.get("priceLast")
+        future_name = future.get("shortName")
+        initialMargin = future.get("initialMargin")
+        if (future_price > share_price):
+            contango = (future_price - share_price) / share_price * 100
+            money = 1.1 * 2.1 * initialMargin + share_price
+            contangos.append((future_name, round(contango, 2), future.get("lastTradeDate"), round(money)))
+
+contangos_sorted = sorted(
+    contangos,
+    key=lambda x: (
+        # x[2], # по дате экспирации
+        -x[1]
+    )
+)
+
+for contango in contangos_sorted[:10]:
+    print(f"{contango[0]}: {contango[1]}%, Вход: {contango[3]} руб.")
