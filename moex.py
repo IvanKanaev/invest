@@ -2,6 +2,8 @@ import requests
 from typing import Dict, List, Optional, TypedDict
 from datetime import datetime
 import json
+import pandas as pd
+pd.set_option('display.max_columns', None)
 
 
 class SharesAndFutures():
@@ -178,6 +180,83 @@ class SharesAndFutures():
         for shares, futures in zip(self.sorted_shares, self.sorted_futures):
             print(shares, futures, "\n")
 
+    def calculate_contango(
+        self,
+        commission_share: float = 0.0006,   # комиссия на покупку акции (например 0.06%)
+        commission_future: float = 0.00015,   # комиссия на продажу фьючерса
+        sort_by_annual_percentage: bool = True
+    ):
+        contangos = []
+
+        for share, futures in zip(self.sorted_shares, self.sorted_futures):
+            share_price_last = share.get("priceLast")
+            share_name = share.get("secid")
+
+            for future in futures:
+                lot_volume = future.get("lotVolume")
+                future_price = future.get("priceLast")
+                initialMargin = future.get("initialMargin")
+
+                if not share_price_last or not future_price or not lot_volume:
+                    continue
+
+                spot_price = share_price_last * lot_volume
+
+                # Учет комиссий
+                spot_price_with_commission = spot_price * (1 + commission_share)
+                future_price_with_commission = future_price * (1 - commission_future)
+
+                # Контанго (обычное)
+                if future_price_with_commission > spot_price_with_commission:
+                    contango = (
+                        (future_price_with_commission - spot_price_with_commission)
+                        / spot_price_with_commission
+                    ) * 100
+
+                    # --- ГОДОВОЕ КОНТАНГО ---
+                    try:
+                        expiry = datetime.strptime(future.get("lastTradeDate"), "%Y-%m-%d")
+
+                        now = datetime.now()
+                        days_to_expiry = (expiry - now).days
+
+                        if days_to_expiry <= 0:
+                            continue
+
+                        contango_annual = contango * (365 / days_to_expiry)
+
+                    except Exception:
+                        contango_annual = None
+
+                    #Начальные траты
+                    initial_margin = 2.1 * initialMargin
+                    initial_expenses = 1.1 * initial_margin + spot_price_with_commission
+
+                    contangos.append({
+                        "share": share_name,
+                        "future": future.get("shortName"),
+                        "UpdateTime": future.get("updateTime"),
+                        "contango_percent": round(contango, 2),
+                        "contango_annual_percent": round(contango_annual, 2) if contango_annual else None,
+                        "days_to_expiry": days_to_expiry,
+                        "expiry": future.get("lastTradeDate"),
+                        "initial_margin": initial_margin,
+                        "initial_expenses": initial_expenses
+                    })
+
+                sort_by = "contango_annual_percent" if sort_by_annual_percentage else "contango_percent"
+
+        return sorted(contangos, key=lambda x: -x[sort_by])
+
+
+    def ContangoDataFrame(
+            self,
+            commission_share: float = 0.0006,  # комиссия на покупку акции (например 0.06%)
+            commission_future: float = 0.00015,  # комиссия на продажу фьючерса
+            sort_by_annual_percentage: bool = True,
+            nums: int = 10
+    ):
+        return pd.DataFrame(self.calculate_contango(commission_share, commission_future, sort_by_annual_percentage))[:nums]
 
 class Share(TypedDict):
     secid: str  # код Акции
@@ -220,27 +299,5 @@ sorted_futures:[[Фьючерс11, Фьючерс12, Фьючерс13...], [Фь
 Ещё есть метод .printSharesAndFuturesSet() он выводит пару [Акция - [фьюч1, фьюч2, фьюч3 и т.д если есть больше] + Enter] итеративно.
 
 """
-contangos = []
-for share, futures in zip(sharesAndFuturesBlock.sorted_shares, sharesAndFuturesBlock.sorted_futures):
-    share_name = share.get("secid")
-    for future in futures:
-        lotVolume = future.get("lotVolume")
-        share_price = share.get("priceLast") * lotVolume
-        future_price = future.get("priceLast")
-        future_name = future.get("shortName")
-        initialMargin = future.get("initialMargin")
-        if (future_price > share_price):
-            contango = (future_price - share_price) / share_price * 100
-            money = 1.1 * 2.1 * initialMargin + share_price
-            contangos.append((future_name, round(contango, 2), future.get("lastTradeDate"), round(money)))
 
-contangos_sorted = sorted(
-    contangos,
-    key=lambda x: (
-        # x[2], # по дате экспирации
-        -x[1]
-    )
-)
-
-for contango in contangos_sorted[:10]:
-    print(f"{contango[0]}: {contango[1]}%, Вход: {contango[3]} руб.")
+print(sharesAndFuturesBlock.getContangoSet(sort_by_annual_percentage=False))
