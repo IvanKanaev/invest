@@ -300,4 +300,4 @@ sorted_futures:[[Фьючерс11, Фьючерс12, Фьючерс13...], [Фь
 
 """
 
-print(sharesAndFuturesBlock.getContangoSet(sort_by_annual_percentage=False))
+print(sharesAndFuturesBlock.ContangoDataFrame(sort_by_annual_percentage=False))
